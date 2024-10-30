@@ -1,0 +1,12 @@
+[package]
+name = "enums-derive"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+change-case = "0.2.0"
+quote = "1.0.9"
+syn = "2.0.37"
+
+[lib]
+proc-macro = true

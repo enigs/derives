@@ -1,0 +1,13 @@
+[package]
+name = "derives"
+version = "0.1.0"
+edition = "2021"
+authors = ["Mark Liwag <markhenry.liwag@gmail.com>"]
+
+[dependencies]
+encryption-derive = { path = "./encryption_derive", version = "0.1.0" }
+enums-derive = { path = "./enums_derive", version = "0.1.0" }
+form-derive = { path = "./form_derive", version = "0.1.0" }
+is-empty-derive = { path = "./is_empty_derive", version = "0.1.0" }
+jsonb-derive = { path = "./jsonb_derive", version = "0.1.0" }
+postgresql-derive = { path = "./postgresql_derive", version = "0.1.0" }
