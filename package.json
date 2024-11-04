@@ -1,0 +1,9 @@
+{
+  "name": "rust-derives-library",
+  "version": "1.0.0",
+  "scripts": {
+    "clippy": "cargo clippy -- -D warnings"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
