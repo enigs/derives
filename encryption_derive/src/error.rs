@@ -15,8 +15,14 @@ pub fn stream(
         pub struct #node {
             #(
                 #derives
-                pub #fields: Null<#types>,
+                pub #fields: nulls::Null<#types>,
             )*
+        }
+
+        impl std::fmt::Display for #node {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(f, "{:#?}", self)
+            }
         }
 
         // Set form node implementation
@@ -32,18 +38,19 @@ pub fn stream(
                 *self == Self::default()
             }
 
-            pub fn validate(&self) -> actix_web::Result<()> {
+            pub fn validate(&self) -> errors::Result<()> {
                 if self.is_empty() {
                     return Ok(())
                 }
 
-                Err(errors::Errors::to(self))
+                Err(errors::to(self))
             }
 
              pub fn as_response(&self) -> actix_web::Result<actix_web::HttpResponse> {
-                let response = responses::as_response(self);
-
-                Ok(actix_web::HttpResponse::Ok().json(response))
+                Ok(actix_web::HttpResponse::Ok().json(serde_json::json!({
+                    "code": 200,
+                    "data": self
+                })))
             }
         }
 

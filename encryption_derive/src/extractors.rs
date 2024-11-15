@@ -112,9 +112,9 @@ pub fn get_sanitize(derive_input: &DeriveInput) -> Vec<TokenStream> {
             if let Some(attr) = attrs.sanitize {
                 if attr.value().as_str() == "trim" {
                     sanitizers.push(quote::quote! {
-                        if let Null::Value(value) = data.#field.clone() {
+                        if let nulls::Null::Value(value) = data.#field.clone() {
                             if !value.is_empty() {
-                                data.#field = Null::Value(value.to_string().trim().to_string());
+                                data.#field = nulls::new(value.to_string().trim().to_string());
                             }
                         }
                     });
@@ -122,9 +122,9 @@ pub fn get_sanitize(derive_input: &DeriveInput) -> Vec<TokenStream> {
 
                 if attr.value().as_str() == "trim_slash" {
                     sanitizers.push(quote::quote! {
-                        if let Null::Value(value) = data.#field.clone() {
+                        if let nulls::Null::Value(value) = data.#field.clone() {
                             if !value.is_empty() {
-                                data.#field = Null::Value(value
+                                data.#field = nulls::new(value
                                     .to_string()
                                     .trim()
                                     .trim_end_matches('/')

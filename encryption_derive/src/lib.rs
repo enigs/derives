@@ -40,7 +40,7 @@ fn derive(stream: TokenStream) -> Result<TokenStream> {
     for (original_field, original_type) in parsers::all_fields(&ast.data) {
         fields.push(original_field.clone());
         derives.push(quote::quote! {
-            #[serde(skip_serializing_if = "Null::is_undefined")]
+            #[serde(skip_serializing_if = "nulls::Null::is_undefined")]
         });
 
         let key = original_field.to_string();
@@ -63,24 +63,24 @@ fn derive(stream: TokenStream) -> Result<TokenStream> {
             if converted_type_string.as_str() == "i32" {
                 conversions_to_response.push(quote::quote! {
                     data.#original_field =  match value.#original_field.clone() {
-                        Null::Undefined => Null::Undefined,
-                        Null::Null => Null::Null,
-                        Null::Value(data) => Null::Value(data.to_i32().unwrap_or(0))
+                        nulls::Null::Undefined => nulls::Null::Undefined,
+                        nulls::Null::Null => nulls::Null::Null,
+                        nulls::Null::Value(data) => nulls::new(data.to_i32().unwrap_or(0))
                     };
                 });
 
                 conversions_to_form.push(quote::quote! {
                     data.#original_field =  match value.#original_field.clone() {
-                        Null::Undefined => Null::Undefined,
-                        Null::Null => Null::Null,
-                        Null::Value(data) => Null::Value(data.to_i32().unwrap_or(0))
+                        nulls::Null::Undefined => nulls::Null::Undefined,
+                        nulls::Null::Null => nulls::Null::Null,
+                        nulls::Null::Value(data) => nulls::new(data.to_i32().unwrap_or(0))
                     };
                 });
 
                 conversions_from_form.push(quote::quote! {
                     data.#original_field =  match value.#original_field.clone().take().unwrap_or(0) > 0 {
-                        true => Null::Value(Cipher::new(value.#original_field.clone().take().unwrap_or(0))),
-                        false => Null::Undefined
+                        true => nulls::new(ciphers::new(value.#original_field.clone().take().unwrap_or(0))),
+                        false => nulls::Null::Undefined
                     };
                 });
 
@@ -100,30 +100,30 @@ fn derive(stream: TokenStream) -> Result<TokenStream> {
             if converted_type_string.as_str() == "String" {
                 conversions_to_response.push(quote::quote! {
                     data.#original_field =  match value.#original_field.clone() {
-                        Null::Undefined => Null::Undefined,
-                        Null::Null => Null::Null,
-                        Null::Value(data) => match data.is_empty() {
-                            true => Null::Undefined,
-                            false => Null::Value(data.to_string())
+                        nulls::Null::Undefined => nulls::Null::Undefined,
+                        nulls::Null::Null => nulls::Null::Null,
+                        nulls::Null::Value(data) => match data.is_empty() {
+                            true => nulls::Null::Undefined,
+                            false => nulls::Null::Value(data.to_string())
                         }
                     };
                 });
 
                 conversions_to_form.push(quote::quote! {
                     data.#original_field =  match value.#original_field.clone() {
-                        Null::Undefined => Null::Undefined,
-                        Null::Null => Null::Null,
-                        Null::Value(data) => match data.is_empty() {
-                            true => Null::Undefined,
-                            false => Null::Value(data.to_string())
+                        nulls::Null::Undefined => nulls::Null::Undefined,
+                        nulls::Null::Null => nulls::Null::Null,
+                        nulls::Null::Value(data) => match data.is_empty() {
+                            true => nulls::Null::Undefined,
+                            false => nulls::Null::Value(data.to_string())
                         }
                     };
                 });
 
                 conversions_from_form.push(quote::quote! {
                     data.#original_field =  match !value.#original_field.clone().take().unwrap_or_default().is_empty() {
-                        true => Null::Value(Cipher::new(value.#original_field.clone().take().unwrap_or_default())),
-                        false => Null::Undefined
+                        true => nulls::Null::Value(ciphers::new(value.#original_field.clone().take().unwrap_or_default())),
+                        false => nulls::Null::Undefined
                     };
                 });
 

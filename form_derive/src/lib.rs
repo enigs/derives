@@ -1,7 +1,7 @@
 use deluxe::Result;
 use quote::format_ident;
 use proc_macro2::{Ident, TokenStream};
-use syn::{Data, DeriveInput, LitStr, Type};
+use syn::{Data, DeriveInput, LitBool, LitStr, Type};
 
 // Set Attr struct
 #[derive(deluxe::ExtractAttributes)]
@@ -9,7 +9,8 @@ use syn::{Data, DeriveInput, LitStr, Type};
 struct Attrs {
     pub refs: Option<Ident>,
     pub sanitize: Option<LitStr>,
-    pub error: Option<Type>
+    pub error: Option<Type>,
+    pub skip_refs: Option<LitBool>
 }
 
 // Start of derive and field attribute derives
@@ -36,9 +37,11 @@ fn derive(stream: TokenStream) -> Result<TokenStream> {
 
     let mut sanitizers = vec![];
     let mut fields = vec![];
+    let mut ref_fields = vec![];
     let mut error_derives = vec![];
     let mut error_fields = vec![];
     let mut error_types = vec![];
+    let mut cloned_fields = vec![];
 
     if let Data::Struct(s) = &mut ast.data.clone() {
         for f in s.fields.iter_mut() {
@@ -49,6 +52,10 @@ fn derive(stream: TokenStream) -> Result<TokenStream> {
 
                 // Save fields
                 fields.push(field.clone());
+
+                if !(attrs.skip_refs.is_some() && attrs.skip_refs.clone().unwrap().value) {
+                    ref_fields.push(field.clone());
+                }
 
                 // Set sanitizers
                 if let Some(attr) = attrs.sanitize {
@@ -130,11 +137,22 @@ fn derive(stream: TokenStream) -> Result<TokenStream> {
                 error_fields.push(field.clone());
                 error_types.push(match () {
                     _ if attrs.error.is_some() => attrs.error.unwrap(),
-                    _ => field_type
+                    _ => field_type.clone()
                 });
 
                 error_derives.push(quote::quote! {
                     #[serde(skip_serializing_if = "Null::is_undefined")]
+                });
+
+                let cloned_field = format_ident!("clone_{}", field);
+                cloned_fields.push(quote::quote!{
+                    pub fn #cloned_field(&self, value: &#field_type) -> Self {
+                        let mut data = self.clone();
+
+                        data.#field = value.clone();
+
+                        data
+                    }
                 });
             }
         }
@@ -165,6 +183,8 @@ fn derive(stream: TokenStream) -> Result<TokenStream> {
 
                 data
             }
+
+            #(#cloned_fields)*
         }
 
         #[derive(Debug, Clone, Default, PartialEq)]
@@ -183,30 +203,12 @@ fn derive(stream: TokenStream) -> Result<TokenStream> {
                 *self == Self::default()
             }
 
-            pub fn validate(&self) -> actix_web::Result<()> {
+            pub fn validate(&self) -> errors::Result<()> {
                 if self.is_empty() {
                     return Ok(())
                 }
 
-                Err(errors::Errors::to(self))
-            }
-
-             pub fn as_response(&self) -> actix_web::Result<actix_web::HttpResponse> {
-                let response = responses::as_response(self);
-
-                Ok(actix_web::HttpResponse::Ok().json(response))
-            }
-        }
-
-        impl From<#node_error> for actix_web::Result<actix_web::HttpResponse> {
-            fn from(value: #node_error) -> actix_web::Result<actix_web::HttpResponse> {
-                value.as_response()
-            }
-        }
-
-        impl From<&#node_error> for actix_web::Result<actix_web::HttpResponse> {
-            fn from(value: &#node_error) -> actix_web::Result<actix_web::HttpResponse> {
-                value.as_response()
+                Err(errors::to(self))
             }
         }
 
@@ -227,7 +229,7 @@ fn derive(stream: TokenStream) -> Result<TokenStream> {
                     let mut data = Self::default();
 
                     #(
-                        data.#fields = value.#fields.clone();
+                        data.#ref_fields = value.#ref_fields.clone();
                     )*
 
                     data
@@ -239,7 +241,7 @@ fn derive(stream: TokenStream) -> Result<TokenStream> {
                     let mut data = Self::default();
 
                     #(
-                        data.#fields = value.#fields.clone();
+                        data.#ref_fields = value.#ref_fields.clone();
                     )*
 
                     data

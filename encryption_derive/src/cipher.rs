@@ -28,13 +28,13 @@ pub fn stream(
                 self
             }
 
-            pub fn encrypt(&self) -> actix_web::Result<Self> {
+            pub fn encrypt(&self) -> Result<Self, errors::Error> {
                 let mut data = self.clone();
 
                 #(
                     if let Some(cipher) = self.#fields.clone().take() {
                         if !cipher.is_empty() {
-                            data.#fields = Null::Value(cipher.encrypt()?);
+                            data.#fields = nulls::new(cipher.encrypt()?);
                         }
                     }
                 )*
@@ -42,13 +42,13 @@ pub fn stream(
                 Ok(data)
             }
 
-            pub fn decrypt(&self) -> actix_web::Result<Self> {
+            pub fn decrypt(&self) -> Result<Self, errors::Error> {
                 let mut data = self.clone();
 
                 #(
                     if let Some(cipher) = self.#fields.clone().take() {
                         if !cipher.is_empty() {
-                            data.#fields = Null::Value(cipher.decrypt()?);
+                            data.#fields = nulls::new(cipher.decrypt()?);
                         }
                     }
                 )*

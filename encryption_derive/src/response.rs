@@ -17,8 +17,19 @@ pub fn stream(
         pub struct #node_response {
             #(
                 #derives
-                pub #fields: Null<#types>,
+                pub #fields: nulls::Null<#types>,
             )*
+        }
+
+        impl actix_web::Responder for #node {
+            type Body = actix_web::body::BoxBody;
+
+            fn respond_to(self, _req: &actix_web::HttpRequest) -> actix_web::HttpResponse {
+                actix_web::HttpResponse::Ok().json(serde_json::json!({
+                    "code": 200,
+                    "data": self.to::<#node_response>()
+                }))
+            }
         }
 
         impl #node {
@@ -54,9 +65,10 @@ pub fn stream(
             }
 
              pub fn as_response(&self) -> actix_web::Result<actix_web::HttpResponse> {
-                let response = responses::as_response(self);
-
-                Ok(actix_web::HttpResponse::Ok().json(response))
+                Ok(actix_web::HttpResponse::Ok().json(serde_json::json!({
+                    "code": 200,
+                    "data": self
+                })))
             }
         }
 

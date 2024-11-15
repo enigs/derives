@@ -22,8 +22,16 @@ pub fn stream(
         pub struct #node_form {
             #(
                 #derives
-                pub #fields: Null<#types>,
+                pub #fields: nulls::Null<#types>,
             )*
+        }
+
+        impl actix_web::Responder for #node_form {
+            type Body = actix_web::body::BoxBody;
+
+            fn respond_to(self, _req: &actix_web::HttpRequest) -> actix_web::HttpResponse {
+                actix_web::HttpResponse::Ok().json(self)
+            }
         }
 
         // Form implementations
